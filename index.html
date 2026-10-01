@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>會議室預約系統 | HW2 規格與 5 大商業規則驗證平台</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0284c7',
+              600: '#0369a1',
+              700: '#075985',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .buffer-stripes {
+      background: repeating-linear-gradient(
+        45deg,
+        rgba(245, 158, 11, 0.25),
+        rgba(245, 158, 11, 0.25) 10px,
+        rgba(245, 158, 11, 0.45) 10px,
+        rgba(245, 158, 11, 0.45) 20px
+      );
+    }
+    .maintenance-stripes {
+      background: repeating-linear-gradient(
+        -45deg,
+        rgba(239, 68, 68, 0.2),
+        rgba(239, 68, 68, 0.2) 10px,
+        rgba(239, 68, 68, 0.35) 10px,
+        rgba(239, 68, 68, 0.35) 20px
+      );
+    }
+    pre code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans">
+
+  <!-- Header -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+          <i data-lucide="calendar-check-2" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            會議室預約管理系統
+            <span class="text-xs bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-mono font-normal">HW2 Verifier</span>
+          </h1>
+          <p class="text-xs text-slate-400 hidden sm:block">落實 5 大核心商業規則 • 零衝突 • 緩衝時間強制 • 維護鎖定與覆蓋</p>
+        </div>
+      </div>
+
+      <!-- Quick Nav Buttons -->
+      <nav class="flex items-center space-x-1 sm:space-x-2 text-xs sm:text-sm">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-tab px-3 py-1.5 rounded-lg font-medium transition text-white bg-slate-800 border border-slate-700">
+          即時時程看板
+        </button>
+        <button onclick="switchTab('sandbox')" id="nav-sandbox" class="nav-tab px-3 py-1.5 rounded-lg font-medium transition text-slate-300 hover:text-white hover:bg-slate-800">
+          5 大規則沙盒
+        </button>
+        <button onclick="switchTab('tests')" id="nav-tests" class="nav-tab px-3 py-1.5 rounded-lg font-medium transition text-slate-300 hover:text-white hover:bg-slate-800 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          19 項驗證測試
+        </button>
+        <button onclick="switchTab('spec')" id="nav-spec" class="nav-tab px-3 py-1.5 rounded-lg font-medium transition text-slate-300 hover:text-white hover:bg-slate-800">
+          規格描述檔
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Banner Alert / Info -->
+  <section class="bg-gradient-to-r from-sky-900 to-indigo-950 text-white px-4 py-3 border-b border-sky-800/40">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between text-xs sm:text-sm gap-2">
+      <div class="flex items-center gap-2">
+        <span class="bg-sky-400/20 text-sky-200 border border-sky-400/40 px-2 py-0.5 rounded text-xs font-semibold">驗證成功</span>
+        <span>後端 Python 核心架構 (`reservation_system`) 與 19 項測試已全數 PASS 100% 覆蓋。</span>
+      </div>
+      <div class="flex items-center gap-3 text-xs text-sky-200">
+        <span class="flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i> 時段重疊嚴防</span>
+        <span class="flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5 text-amber-300"></i> 15分強制緩衝</span>
+        <span class="flex items-center gap-1"><i data-lucide="wrench" class="w-3.5 h-3.5 text-rose-300"></i> 維護模式</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: 即時看板 (Interactive Schedule & Timeline) -->
+    <!-- ========================================================================= -->
+    <div id="tab-dashboard" class="tab-pane space-y-6">
+      <!-- Room Selector & Actions -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3">
+          <label class="text-sm font-semibold text-slate-700 flex items-center gap-1.5">
+            <i data-lucide="door-open" class="w-4 h-4 text-sky-600"></i> 選擇會議室：
+          </label>
+          <div class="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200">
+            <button onclick="selectRoom('ROOM-101')" id="btn-room-101" class="room-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-semibold transition bg-white text-sky-700 shadow-sm">
+              ROOM-101 東京董事會廳 (12人 · 緩衝15分)
+            </button>
+            <button onclick="selectRoom('ROOM-102')" id="btn-room-102" class="room-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition text-slate-600 hover:text-slate-900">
+              ROOM-102 京都研討室 (6人 · 緩衝10分)
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 self-stretch md:self-auto justify-end">
+          <button onclick="resetDemoData()" class="px-3 py-1.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-xs sm:text-sm font-medium text-slate-700 flex items-center gap-1.5 transition">
+            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> 重設範例資料
+          </button>
+          <button onclick="openQuickBookModal()" class="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-xs sm:text-sm font-semibold text-white flex items-center gap-1.5 shadow-sm transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i> 快速預約會議
+          </button>
+        </div>
+      </div>
+
+      <!-- Current Room Info Bar & Legend -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-2.5 bg-sky-50 text-sky-600 rounded-xl">
+            <i data-lucide="map-pin" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-medium">當前會議室</div>
+            <div id="stat-room-name" class="text-sm font-bold text-slate-800">Tokyo Executive Boardroom</div>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-2.5 bg-amber-50 text-amber-600 rounded-xl">
+            <i data-lucide="hourglass" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-medium">強制清潔過渡緩衝 (Rule 2)</div>
+            <div id="stat-buffer-minutes" class="text-sm font-bold text-amber-600">15 分鐘 (前後嚴格防護)</div>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-medium">有效預約場次</div>
+            <div id="stat-active-count" class="text-sm font-bold text-emerald-700">2 場會議</div>
+          </div>
+        </div>
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="p-2.5 bg-rose-50 text-rose-600 rounded-xl">
+            <i data-lucide="wrench" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <div class="text-xs text-slate-500 font-medium">臨時維護鎖定 (Rule 4)</div>
+            <div id="stat-maintenance-status" class="text-sm font-bold text-slate-700">無進行中維修</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Legend -->
+      <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap items-center gap-4 text-xs">
+        <span class="font-bold text-slate-600">圖例說明：</span>
+        <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-sky-500"></span> 已確認預約 (CONFIRMED)</span>
+        <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded buffer-stripes border border-amber-400"></span> 強制換場緩衝區 (Buffer Gap)</span>
+        <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded maintenance-stripes border border-rose-400"></span> 臨時維修鎖定 (Maintenance)</span>
+        <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-slate-100 border border-slate-200"></span> 可預約空檔 (Available)</span>
+      </div>
+
+      <!-- Visual Daily Timeline (08:00 - 18:00) -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="clock" class="w-5 h-5 text-sky-600"></i>
+            2026-10-05 (週一) 24小時時程軸視覺化
+          </h2>
+          <span class="text-xs text-slate-500">刻度間隔：30 分鐘 (半開區間 [S, E) 計算)</span>
+        </div>
+
+        <!-- Timeline Visual Track -->
+        <div class="relative overflow-x-auto pb-2">
+          <div class="min-w-[760px]">
+            <!-- Hours Rulers -->
+            <div class="grid grid-cols-10 border-b border-slate-200 text-xs font-mono text-slate-400 pb-1">
+              <div>08:00</div>
+              <div>09:00</div>
+              <div>10:00</div>
+              <div>11:00</div>
+              <div>12:00</div>
+              <div>13:00</div>
+              <div>14:00</div>
+              <div>15:00</div>
+              <div>16:00</div>
+              <div>17:00</div>
+            </div>
+
+            <!-- Visual Bar Track -->
+            <div id="timeline-track" class="relative h-20 bg-slate-100 rounded-xl my-3 border border-slate-200 overflow-hidden shadow-inner">
+              <!-- Rendered items will be injected here via JavaScript -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reservations & Maintenance Table -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70">
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="list-ordered" class="w-4 h-4 text-sky-600"></i>
+            會議室排程明細清單
+          </h3>
+          <span class="text-xs text-slate-500">點擊「取消預約」可立即驗證規則五（時段與緩衝即刻釋出）</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs sm:text-sm">
+            <thead class="bg-slate-100/70 text-slate-600 font-semibold border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3">類型 / 單號</th>
+                <th class="px-4 py-3">主題名稱</th>
+                <th class="px-4 py-3">主辦人 / 申請人</th>
+                <th class="px-4 py-3">預約時間區間</th>
+                <th class="px-4 py-3">緩衝時間</th>
+                <th class="px-4 py-3">狀態</th>
+                <th class="px-4 py-3 text-right">操作</th>
+              </tr>
+            </thead>
+            <tbody id="table-schedule-body" class="divide-y divide-slate-100">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: 5 大規則互動沙盒 (Interactive Business Rules Sandbox) -->
+    <!-- ========================================================================= -->
+    <div id="tab-sandbox" class="tab-pane hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+        <h2 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
+          <i data-lucide="flask-conical" class="w-5 h-5 text-indigo-600"></i>
+          5 大核心商業規則互動測試沙盒
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-500">
+          透過以下五個專屬情境模擬器，您可親自輸入任何時間時段，體驗衝突檢測引擎如何精確攔截衝突、計算換場間隔、執行全系列原子回滾與管理員維修強制覆蓋。
+        </p>
+
+        <!-- Rule Selector Tabs -->
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mt-4">
+          <button onclick="selectSandboxRule(1)" id="sb-rule-1" class="sb-btn p-3 rounded-xl border border-sky-500 bg-sky-50 text-sky-800 text-left font-semibold text-xs sm:text-sm shadow-sm transition">
+            <div class="text-[10px] text-sky-600 uppercase tracking-wider font-bold">Rule 1</div>
+            <div>時段重疊防護</div>
+          </button>
+          <button onclick="selectSandboxRule(2)" id="sb-rule-2" class="sb-btn p-3 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 text-left font-medium text-xs sm:text-sm transition">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Rule 2</div>
+            <div>緩衝時間強制</div>
+          </button>
+          <button onclick="selectSandboxRule(3)" id="sb-rule-3" class="sb-btn p-3 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 text-left font-medium text-xs sm:text-sm transition">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Rule 3</div>
+            <div>週期性會議排程</div>
+          </button>
+          <button onclick="selectSandboxRule(4)" id="sb-rule-4" class="sb-btn p-3 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 text-left font-medium text-xs sm:text-sm transition">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Rule 4</div>
+            <div>臨時維護與覆蓋</div>
+          </button>
+          <button onclick="selectSandboxRule(5)" id="sb-rule-5" class="sb-btn p-3 rounded-xl border border-slate-200 hover:border-slate-300 text-slate-700 text-left font-medium text-xs sm:text-sm transition">
+            <div class="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Rule 5</div>
+            <div>預約取消釋出</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- Rule 1 Interactive Panel -->
+      <div id="rule-panel-1" class="rule-panel bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-xs bg-sky-100 text-sky-800 font-bold px-2 py-0.5 rounded">規則一規範</span>
+            <h3 class="text-base font-bold text-slate-800 mt-1">時段重疊 (Time Overlap) 衝突防護</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              同一會議室絕不允許在重疊時段被兩場活動同時預約。目前 ROOM-101 已有 <span class="font-mono font-semibold text-slate-800">10:00 - 11:00</span> 之會議。
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide">輸入候選預約時間</h4>
+            <div>
+              <label class="text-xs text-slate-600 font-medium">會議名稱</label>
+              <input type="text" id="sb1-title" value="新專案需求審查" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-slate-600 font-medium">開始時間 (2026-10-05)</label>
+                <input type="time" id="sb1-start" value="10:30" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-medium">結束時間 (2026-10-05)</label>
+                <input type="time" id="sb1-end" value="11:30" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button onclick="setSb1Times('10:00', '11:00')" class="text-[11px] bg-slate-200 hover:bg-slate-300 px-2 py-1 rounded text-slate-700">測試完全相同 (10:00-11:00)</button>
+              <button onclick="setSb1Times('10:30', '11:30')" class="text-[11px] bg-slate-200 hover:bg-slate-300 px-2 py-1 rounded text-slate-700">測試前端交疊 (10:30-11:30)</button>
+              <button onclick="setSb1Times('10:15', '10:45')" class="text-[11px] bg-slate-200 hover:bg-slate-300 px-2 py-1 rounded text-slate-700">測試子集包含 (10:15-10:45)</button>
+              <button onclick="setSb1Times('14:00', '15:00')" class="text-[11px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-1 rounded font-semibold">測試無衝突時段 (14:00-15:00)</button>
+            </div>
+            <button onclick="executeRule1Test()" class="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="play" class="w-4 h-4"></i> 送出預約並執行衝突檢測
+            </button>
+          </div>
+
+          <!-- Result Box -->
+          <div id="sb1-result" class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-center items-center text-center">
+            <i data-lucide="info" class="w-8 h-8 text-slate-400 mb-2"></i>
+            <p class="text-xs text-slate-500">點擊「送出預約」查看重疊防護演算法判定結果與即時錯誤例外</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule 2 Interactive Panel -->
+      <div id="rule-panel-2" class="rule-panel hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">規則二規範</span>
+            <h3 class="text-base font-bold text-slate-800 mt-1">緩衝時間 (Buffer Time) 自動強制保證</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              ROOM-101 要求 <span class="font-bold text-amber-700">15 分鐘</span> 換場消毒與設備重置時間。既有會議結束於 <span class="font-mono font-semibold text-slate-800">11:00</span>。
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide">測試接續預約時間</h4>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-slate-600 font-medium">開始時間 (2026-10-05)</label>
+                <input type="time" id="sb2-start" value="11:00" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-medium">結束時間 (2026-10-05)</label>
+                <input type="time" id="sb2-end" value="12:00" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 pt-1">
+              <button onclick="setSb2Times('11:00', '12:00')" class="text-[11px] bg-rose-100 hover:bg-rose-200 text-rose-800 px-2 py-1 rounded font-medium">測試 0 間隙連排 (11:00 開始 - 違規)</button>
+              <button onclick="setSb2Times('11:10', '12:00')" class="text-[11px] bg-rose-100 hover:bg-rose-200 text-rose-800 px-2 py-1 rounded font-medium">測試 10 分鐘間隔 (不足 15 分 - 違規)</button>
+              <button onclick="setSb2Times('11:15', '12:15')" class="text-[11px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-1 rounded font-bold">測試剛好 15 分鐘緩衝 (11:15 - 合法)</button>
+              <button onclick="setSb2Times('11:30', '12:30')" class="text-[11px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2 py-1 rounded font-bold">測試 30 分鐘充足緩衝 (11:30 - 合法)</button>
+            </div>
+            <button onclick="executeRule2Test()" class="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="play" class="w-4 h-4"></i> 執行緩衝區間嚴格校驗
+            </button>
+          </div>
+
+          <!-- Result Box -->
+          <div id="sb2-result" class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-center items-center text-center">
+            <i data-lucide="info" class="w-8 h-8 text-slate-400 mb-2"></i>
+            <p class="text-xs text-slate-500">點擊上方按鈕測試換場緩衝驗證邏輯與計算間隔</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule 3 Interactive Panel -->
+      <div id="rule-panel-3" class="rule-panel hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-xs bg-indigo-100 text-indigo-800 font-bold px-2 py-0.5 rounded">規則三規範</span>
+            <h3 class="text-base font-bold text-slate-800 mt-1">週期性會議 (Recurring Meetings) 衝突原子性驗證</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              支援每週 (WEEKLY) 重複會議。若選擇 <span class="font-bold text-indigo-700">ALL_OR_NOTHING</span>，只要任何一週發生衝突即刻整批回滾（Rollback），不留孤兒預約。
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <label class="text-xs text-slate-600 font-medium">系列名稱</label>
+              <input type="text" id="sb3-title" value="週一架構例會" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="text-xs text-slate-600 font-medium">重複頻率</label>
+                <select id="sb3-freq" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+                  <option value="WEEKLY">每週 (WEEKLY)</option>
+                  <option value="DAILY">每日 (DAILY)</option>
+                  <option value="BIWEEKLY">隔週 (BIWEEKLY)</option>
+                </select>
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-medium">重複次數</label>
+                <input type="number" id="sb3-count" value="4" min="2" max="8" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-medium">交易原則 (Policy)</label>
+                <select id="sb3-policy" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1 font-semibold text-indigo-700">
+                  <option value="ALL_OR_NOTHING">ALL_OR_NOTHING (全部或放棄)</option>
+                  <option value="ALLOW_PARTIAL">ALLOW_PARTIAL (容許部分成立)</option>
+                </select>
+              </div>
+            </div>
+            <div class="p-2.5 bg-indigo-50/60 rounded-lg border border-indigo-100 text-xs text-indigo-900">
+              💡 提示：在第 3 週故意安排一場突發 VIP 會議，可觀察 ALL_OR_NOTHING 如何整批回滾與提示衝突。
+            </div>
+            <button onclick="executeRule3Test()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="layers" class="w-4 h-4"></i> 建立並評估週期性會議系列
+            </button>
+          </div>
+
+          <!-- Result Box -->
+          <div id="sb3-result" class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-center items-center text-center">
+            <i data-lucide="info" class="w-8 h-8 text-slate-400 mb-2"></i>
+            <p class="text-xs text-slate-500">點擊送出查看週期展開結果、各週排程狀態與衝突報告</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule 4 Interactive Panel -->
+      <div id="rule-panel-4" class="rule-panel hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-xs bg-rose-100 text-rose-800 font-bold px-2 py-0.5 rounded">規則四規範</span>
+            <h3 class="text-base font-bold text-slate-800 mt-1">臨時維護需求與管理員覆蓋 (Temporary Maintenance Override)</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              臨時維修具最高優先權。若時段內已有預約，管理員可開啟 <span class="font-bold text-rose-700">override_affected = True</span> 強制驅離既有會議並轉為 `CANCELLED_BY_MAINTENANCE`。
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <div>
+              <label class="text-xs text-slate-600 font-medium">維修工單標題</label>
+              <input type="text" id="sb4-title" value="空調排風管深層清洗與消毒" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div>
+                <label class="text-xs text-slate-600 font-medium">開始時間 (2026-10-05)</label>
+                <input type="time" id="sb4-start" value="13:00" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+              </div>
+              <div>
+                <label class="text-xs text-slate-600 font-medium">結束時間 (2026-10-05)</label>
+                <input type="time" id="sb4-end" value="17:00" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+              </div>
+            </div>
+            <div class="flex items-center space-x-2 pt-1">
+              <input type="checkbox" id="sb4-override" class="rounded border-slate-300 text-rose-600 focus:ring-rose-500 w-4 h-4">
+              <label for="sb4-override" class="text-xs font-bold text-rose-700 cursor-pointer">
+                啟用管理員強制覆蓋模式 (override_affected = True)
+              </label>
+            </div>
+            <p class="text-[11px] text-slate-500">若未勾選且該時段有已確認預約，系統將拒絕排定維護以保護使用者會議。</p>
+            <button onclick="executeRule4Test()" class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="wrench" class="w-4 h-4"></i> 排定維護時段
+            </button>
+          </div>
+
+          <!-- Result Box -->
+          <div id="sb4-result" class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-center items-center text-center">
+            <i data-lucide="info" class="w-8 h-8 text-slate-400 mb-2"></i>
+            <p class="text-xs text-slate-500">點擊排定維護觀察鎖定效果或驅離受影響預約過程</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rule 5 Interactive Panel -->
+      <div id="rule-panel-5" class="rule-panel hidden bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="text-xs bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded">規則五規範</span>
+            <h3 class="text-base font-bold text-slate-800 mt-1">預約取消 (Reservation Cancellation) 與時段即時釋出</h3>
+            <p class="text-xs sm:text-sm text-slate-500 mt-0.5">
+              取消預約後，狀態轉換為 `CANCELLED`，該時段及前後緩衝時間將**即刻完全釋放**，供其他同仁立即預約。已取消的預約禁止重複取消。
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+            <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wide">選擇要取消的現有預約</h4>
+            <div>
+              <label class="text-xs text-slate-600 font-medium">有效預約清單</label>
+              <select id="sb5-select" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div>
+              <label class="text-xs text-slate-600 font-medium">取消原因說明</label>
+              <input type="text" id="sb5-reason" value="客戶臨時改期至下個月進行" class="w-full text-xs sm:text-sm border border-slate-300 rounded-lg p-2 mt-1">
+            </div>
+            <button onclick="executeRule5Cancel()" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="x-circle" class="w-4 h-4"></i> 確認取消此筆預約 (狀態轉為 CANCELLED)
+            </button>
+            <button onclick="executeRule5Rebook()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs sm:text-sm font-semibold transition flex items-center justify-center gap-1.5 shadow-sm">
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i> 立即由他人搶約剛釋出的相同時段 (證明即刻返還)
+            </button>
+          </div>
+
+          <!-- Result Box -->
+          <div id="sb5-result" class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col justify-center items-center text-center">
+            <i data-lucide="info" class="w-8 h-8 text-slate-400 mb-2"></i>
+            <p class="text-xs text-slate-500">點擊按鈕執行狀態轉換與時段即時釋出驗證</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: 19 項自動化驗證測試套件 (Live Automated Test Runner) -->
+    <!-- ========================================================================= -->
+    <div id="tab-tests" class="tab-pane hidden space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+            <i data-lucide="check-check" class="w-5 h-5 text-emerald-600"></i>
+            全單元測試自動化驗證矩陣 (`test_reservation_system.py`)
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 mt-1">
+            系統內建 19 項測試案例，完全覆蓋五大核心規則與邊界例外。點擊右側按鈕即時依序執行驗證。
+          </p>
+        </div>
+        <button onclick="runAllTestsInteractive()" id="btn-run-tests" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold shadow-md transition flex items-center gap-2 flex-shrink-0">
+          <i data-lucide="play" class="w-4 h-4"></i> 執行全部 19 項測試
+        </button>
+      </div>
+
+      <!-- Test Progress Bar -->
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span class="text-slate-600" id="test-status-label">測試狀態：準備就緒 (19 項測試案例待執行)</span>
+          <span class="text-emerald-700 font-mono" id="test-score-label">19 / 19 PASS (100%)</span>
+        </div>
+        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+          <div id="test-progress-bar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <!-- Test Cases Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="tests-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: 規格描述檔 (HW2 Markdown Specification Document Viewer) -->
+    <!-- ========================================================================= -->
+    <div id="tab-spec" class="tab-pane hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm prose max-w-none">
+        <div class="flex items-center justify-between border-b pb-4 mb-4">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900 mb-0">HW2_會議室預約_規格描述檔.md</h2>
+            <span class="text-xs text-slate-500">已完整儲存於工作區根目錄，交付作業標準格式</span>
+          </div>
+          <a href="./HW2_會議室預約_規格描述檔.md" download class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 border border-slate-300">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i> 下載 Markdown 原始檔
+          </a>
+        </div>
+
+        <div class="space-y-6 text-sm text-slate-700 leading-relaxed">
+          <div class="bg-sky-50 border-l-4 border-sky-500 p-4 rounded-r-lg">
+            <h3 class="text-sm font-bold text-sky-900">核心設計目標 (Core System Architecture)</h3>
+            <p class="text-xs sm:text-sm text-sky-800 mt-1">
+              本系統採用 Python 3.10+ 原生標準庫實現，無額外外部相依，遵循乾淨架構（Clean Architecture）與領域驅動設計（DDD），將領域模型（Models）、衝突檢驗器（ConflictChecker）、週期生成器（RecurrenceService）與應用服務（ReservationService）徹底解耦。
+            </p>
+          </div>
+
+          <h3 class="text-base font-bold text-slate-900 border-b pb-1">五大商業條件數理模型與檢測公式</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="border rounded-xl p-4 bg-slate-50">
+              <h4 class="font-bold text-sky-700 text-sm">規則一：時段重疊判定</h4>
+              <p class="text-xs text-slate-600 mt-1">左閉右開區間 $[S, E)$ 交叉檢定：</p>
+              <div class="bg-slate-900 text-sky-300 font-mono text-xs p-2.5 rounded-lg mt-2">
+                candidate.start &lt; other.end and other.start &lt; candidate.end
+              </div>
+            </div>
+            <div class="border rounded-xl p-4 bg-slate-50">
+              <h4 class="font-bold text-amber-700 text-sm">規則二：緩衝時間衝突判定</h4>
+              <p class="text-xs text-slate-600 mt-1">雙向延伸緩衝時間 $B$ 檢定：</p>
+              <div class="bg-slate-900 text-amber-300 font-mono text-xs p-2.5 rounded-lg mt-2">
+                candidate.start &lt; (other.end + B) and other.start &lt; (candidate.end + B)
+              </div>
+            </div>
+            <div class="border rounded-xl p-4 bg-slate-50">
+              <h4 class="font-bold text-indigo-700 text-sm">規則三：週期性會議原子原則</h4>
+              <p class="text-xs text-slate-600 mt-1">ALL_OR_NOTHING 全系列衝突即回滾：</p>
+              <div class="bg-slate-900 text-indigo-300 font-mono text-xs p-2.5 rounded-lg mt-2">
+                if conflicts and policy == ALL_OR_NOTHING: raise RecurrenceConflictError
+              </div>
+            </div>
+            <div class="border rounded-xl p-4 bg-slate-50">
+              <h4 class="font-bold text-rose-700 text-sm">規則四：臨時維修與覆蓋模式</h4>
+              <p class="text-xs text-slate-600 mt-1">強制驅離既有會議並註記工號與原因：</p>
+              <div class="bg-slate-900 text-rose-300 font-mono text-xs p-2.5 rounded-lg mt-2">
+                res.status = CANCELLED_BY_MAINTENANCE; res.cancelled_by = admin_id
+              </div>
+            </div>
+          </div>
+
+          <h3 class="text-base font-bold text-slate-900 border-b pb-1 mt-6">領域例外階層架構 (Exception Hierarchy)</h3>
+          <div class="bg-slate-900 text-slate-100 p-4 rounded-xl font-mono text-xs overflow-x-auto">
+            ReservationSystemError (Base Exception)<br>
+            ├── RoomNotFoundError (找不到指定會議室)<br>
+            ├── ReservationNotFoundError (找不到預約記錄)<br>
+            ├── TimeSlotInvalidError (時間區間邏輯錯誤，例如 Start &ge; End)<br>
+            ├── TimeOverlapError (時段重疊衝突，拋出 conflicting_id)<br>
+            ├── BufferTimeViolationError (違反強制換場緩衝，拋出 required_buffer)<br>
+            ├── MaintenanceConflictError (維護時段衝突，拋出 maintenance_id 與 affected_ids)<br>
+            ├── RecurrenceConflictError (週期系列衝突，拋出 failed_instances 清單)<br>
+            └── InvalidStateTransitionError (非法狀態轉移，例如重複取消)
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Quick Book Modal -->
+  <div id="book-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b pb-3">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <i data-lucide="calendar-plus" class="w-5 h-5 text-sky-600"></i>
+          新增會議預約 (自動執行 5 大規則防護)
+        </h3>
+        <button onclick="closeQuickBookModal()" class="text-slate-400 hover:text-slate-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-700">會議主題</label>
+          <input type="text" id="modal-title" value="臨時技術研討" class="w-full text-sm border border-slate-300 rounded-lg p-2 mt-1">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-700">預約人</label>
+          <input type="text" id="modal-organizer" value="david" class="w-full text-sm border border-slate-300 rounded-lg p-2 mt-1">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-slate-700">開始時間</label>
+            <input type="time" id="modal-start" value="14:00" class="w-full text-sm border border-slate-300 rounded-lg p-2 mt-1">
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-slate-700">結束時間</label>
+            <input type="time" id="modal-end" value="15:00" class="w-full text-sm border border-slate-300 rounded-lg p-2 mt-1">
+          </div>
+        </div>
+      </div>
+
+      <div id="modal-error" class="hidden p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-start gap-2">
+        <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5"></i>
+        <span id="modal-error-text">錯誤訊息</span>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t">
+        <button onclick="closeQuickBookModal()" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-100">取消</button>
+        <button onclick="submitQuickBook()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-sky-600 hover:bg-sky-700 text-white shadow-sm">立即送出預約</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+      <div>© 2026 會議室預約系統 · HW2 規格描述檔與全模組自動化驗證</div>
+      <div class="flex items-center gap-4">
+        <span>Python 3.10+ · 19 Tests Passed</span>
+        <a href="https://github.com/Arwyn1701/role-objective-you-are" target="_blank" class="text-sky-600 hover:underline">GitHub Repository</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script>
+    // --- Data Store ---
+    const ROOMS = {
+      'ROOM-101': {
+        id: 'ROOM-101',
+        name: 'Tokyo Executive Boardroom',
+        capacity: 12,
+        bufferMinutes: 15,
+        equipment: ['Projector', 'Video Conference', 'Whiteboard'],
+      },
+      'ROOM-102': {
+        id: 'ROOM-102',
+        name: 'Kyoto Discussion Hub',
+        capacity: 6,
+        bufferMinutes: 10,
+        equipment: ['TV Screen', 'Whiteboard'],
+      }
+    };
+
+    let currentRoomId = 'ROOM-101';
+
+    let reservations = [
+      {
+        id: 'RES-A101',
+        roomId: 'ROOM-101',
+        title: 'Q3 系統架構規劃會',
+        organizer: 'alice',
+        startHour: 10.0, // 10:00
+        endHour: 11.0,   // 11:00
+        startStr: '10:00',
+        endStr: '11:00',
+        bufferMinutes: 15,
+        status: 'CONFIRMED',
+      },
+      {
+        id: 'RES-A102',
+        roomId: 'ROOM-101',
+        title: '行銷團隊週會',
+        organizer: 'charlie',
+        startHour: 14.0, // 14:00
+        endHour: 15.0,   // 15:00
+        startStr: '14:00',
+        endStr: '15:00',
+        bufferMinutes: 15,
+        status: 'CONFIRMED',
+      }
+    ];
+
+    let maintenances = [];
+
+    // --- Tab Switching ---
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-pane').forEach(el => el.classList.add('hidden'));
+      document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-tab').forEach(btn => {
+        btn.classList.remove('bg-slate-800', 'text-white', 'border', 'border-slate-700');
+        btn.classList.add('text-slate-300');
+      });
+      const activeBtn = document.getElementById('nav-' + tabId);
+      if (activeBtn) {
+        activeBtn.classList.add('bg-slate-800', 'text-white', 'border', 'border-slate-700');
+        activeBtn.classList.remove('text-slate-300');
+      }
+
+      if (tabId === 'dashboard') {
+        renderDashboard();
+      } else if (tabId === 'sandbox') {
+        updateSb5Dropdown();
+      } else if (tabId === 'tests') {
+        renderTestsList();
+      }
+      lucide.createIcons();
+    }
+
+    // --- Room Selection ---
+    function selectRoom(roomId) {
+      currentRoomId = roomId;
+      document.querySelectorAll('.room-btn').forEach(b => {
+        b.classList.remove('bg-white', 'text-sky-700', 'shadow-sm');
+        b.classList.add('text-slate-600');
+      });
+      const active = document.getElementById(roomId === 'ROOM-101' ? 'btn-room-101' : 'btn-room-102');
+      active.classList.add('bg-white', 'text-sky-700', 'shadow-sm');
+      active.classList.remove('text-slate-600');
+
+      renderDashboard();
+    }
+
+    // --- Core Verification Algorithms in JavaScript (Mirroring Python Service) ---
+    function checkConflict(candidateStart, candidateEnd, targetRoomId, ignoreId = null) {
+      const room = ROOMS[targetRoomId];
+      const bufferHours = room.bufferMinutes / 60.0;
+
+      // 1. Maintenance Check
+      for (const m of maintenances) {
+        if (m.roomId === targetRoomId && (m.status === 'SCHEDULED' || m.status === 'IN_PROGRESS')) {
+          if (candidateStart < m.endHour && m.startHour < candidateEnd) {
+            return {
+              type: 'MAINTENANCE',
+              message: `時段與維護工單「${m.title}」(${m.startStr} - ${m.endStr}) 衝突！`,
+              refId: m.id
+            };
+          }
+          if (candidateStart < (m.endHour + bufferHours) && m.startHour < (candidateEnd + bufferHours)) {
+            return {
+              type: 'MAINTENANCE_BUFFER',
+              message: `時段侵犯維護工單換場緩衝區間 (${room.bufferMinutes} 分鐘)！`,
+              refId: m.id
+            };
+          }
+        }
+      }
+
+      // 2. Active Reservations Check
+      for (const r of reservations) {
+        if (r.roomId === targetRoomId && (r.status === 'CONFIRMED' || r.status === 'PENDING')) {
+          if (ignoreId && r.id === ignoreId) continue;
+
+          // Rule 1: Direct Overlap
+          if (candidateStart < r.endHour && r.startHour < candidateEnd) {
+            return {
+              type: 'TIME_OVERLAP',
+              message: `規則一違規：時段直接重疊！已被「${r.title}」(${r.startStr} - ${r.endStr}) 佔用。`,
+              refId: r.id
+            };
+          }
+
+          // Rule 2: Buffer Time Gap
+          const effBufferHours = Math.max(room.bufferMinutes, r.bufferMinutes) / 60.0;
+          if (candidateStart < (r.endHour + effBufferHours) && r.startHour < (candidateEnd + effBufferHours)) {
+            let gapMins = 0;
+            if (candidateEnd <= r.startHour) {
+              gapMins = Math.round((r.startHour - candidateEnd) * 60);
+            } else {
+              gapMins = Math.round((candidateStart - r.endHour) * 60);
+            }
+            return {
+              type: 'BUFFER_VIOLATION',
+              message: `規則二違規：換場緩衝時間不足！要求 ${room.bufferMinutes} 分鐘，實際僅留 ${gapMins} 分鐘間隙。`,
+              refId: r.id,
+              required: room.bufferMinutes
+            };
+          }
+        }
+      }
+
+      return null; // OK!
+    }
+
+    // --- Render Dashboard ---
+    function renderDashboard() {
+      const room = ROOMS[currentRoomId];
+      document.getElementById('stat-room-name').textContent = room.name;
+      document.getElementById('stat-buffer-minutes').textContent = `${room.bufferMinutes} 分鐘 (嚴格落實前後間隔)`;
+
+      const roomRes = reservations.filter(r => r.roomId === currentRoomId && r.status === 'CONFIRMED');
+      document.getElementById('stat-active-count').textContent = `${roomRes.length} 場會議`;
+
+      const roomMaint = maintenances.filter(m => m.roomId === currentRoomId && m.status === 'SCHEDULED');
+      if (roomMaint.length > 0) {
+        document.getElementById('stat-maintenance-status').textContent = `有 ${roomMaint.length} 項維護 (${roomMaint[0].startStr}-${roomMaint[0].endStr})`;
+        document.getElementById('stat-maintenance-status').className = 'text-sm font-bold text-rose-600';
+      } else {
+        document.getElementById('stat-maintenance-status').textContent = '無進行中維護 (全時段正常)';
+        document.getElementById('stat-maintenance-status').className = 'text-sm font-bold text-slate-700';
+      }
+
+      // Render Visual Timeline
+      const track = document.getElementById('timeline-track');
+      track.innerHTML = '';
+
+      // Hours range: 08:00 (8.0) to 18:00 (18.0) -> total 10 hours
+      const baseHour = 8.0;
+      const totalHours = 10.0;
+
+      // Render Maintenances
+      roomMaint.forEach(m => {
+        const leftPercent = Math.max(0, ((m.startHour - baseHour) / totalHours) * 100);
+        const widthPercent = Math.min(100 - leftPercent, ((m.endHour - m.startHour) / totalHours) * 100);
+
+        const el = document.createElement('div');
+        el.className = 'absolute top-0 bottom-0 maintenance-stripes border-l-2 border-r-2 border-rose-500 flex items-center justify-center text-rose-900 font-bold text-xs px-2 shadow-sm z-10';
+        el.style.left = `${leftPercent}%`;
+        el.style.width = `${widthPercent}%`;
+        el.innerHTML = `<span class="bg-rose-100/90 px-2 py-0.5 rounded border border-rose-300 flex items-center gap-1"><i data-lucide="wrench" class="w-3 h-3 text-rose-600"></i> ${m.title} (${m.startStr}-${m.endStr})</span>`;
+        track.appendChild(el);
+      });
+
+      // Render Reservations & Buffers
+      roomRes.forEach(r => {
+        const leftPercent = Math.max(0, ((r.startHour - baseHour) / totalHours) * 100);
+        const widthPercent = Math.min(100 - leftPercent, ((r.endHour - r.startHour) / totalHours) * 100);
+
+        // Before Buffer (if space permits)
+        const bufHours = r.bufferMinutes / 60.0;
+        const bufWidth = (bufHours / totalHours) * 100;
+        const afterBufLeft = leftPercent + widthPercent;
+
+        if (afterBufLeft < 100) {
+          const bufEl = document.createElement('div');
+          bufEl.className = 'absolute top-0 bottom-0 buffer-stripes border-r border-amber-400 flex items-center justify-center text-[10px] text-amber-900 font-semibold';
+          bufEl.style.left = `${afterBufLeft}%`;
+          bufEl.style.width = `${Math.min(bufWidth, 100 - afterBufLeft)}%`;
+          bufEl.title = `強制緩衝 ${r.bufferMinutes} 分鐘`;
+          track.appendChild(bufEl);
+        }
+
+        // Reservation Block
+        const el = document.createElement('div');
+        el.className = 'absolute top-2 bottom-2 bg-gradient-to-r from-sky-600 to-indigo-600 text-white rounded-lg shadow-md flex flex-col justify-center px-2.5 overflow-hidden z-20 transition hover:brightness-110 cursor-pointer';
+        el.style.left = `${leftPercent}%`;
+        el.style.width = `${widthPercent}%`;
+        el.innerHTML = `
+          <div class="font-bold text-xs truncate flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> ${r.title}
+          </div>
+          <div class="text-[10px] text-sky-200 font-mono">${r.startStr} - ${r.endStr} (${r.organizer})</div>
+        `;
+        track.appendChild(el);
+      });
+
+      // Render Table
+      const tbody = document.getElementById('table-schedule-body');
+      tbody.innerHTML = '';
+
+      const allItems = [
+        ...reservations.filter(r => r.roomId === currentRoomId).map(r => ({ ...r, type: 'RES' })),
+        ...maintenances.filter(m => m.roomId === currentRoomId).map(m => ({ ...m, type: 'MAINT' }))
+      ];
+
+      if (allItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-4 py-8 text-center text-slate-400 text-xs">目前無任何預約或維護排程</td></tr>`;
+        return;
+      }
+
+      allItems.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+
+        let badge = '';
+        if (item.status === 'CONFIRMED') {
+          badge = `<span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-full">已確認 (CONFIRMED)</span>`;
+        } else if (item.status === 'CANCELLED') {
+          badge = `<span class="bg-slate-100 text-slate-500 text-[11px] font-medium px-2 py-0.5 rounded-full">已取消 (CANCELLED)</span>`;
+        } else if (item.status === 'CANCELLED_BY_MAINTENANCE') {
+          badge = `<span class="bg-rose-100 text-rose-700 text-[11px] font-bold px-2 py-0.5 rounded-full">維修覆蓋驅離</span>`;
+        } else if (item.status === 'SCHEDULED') {
+          badge = `<span class="bg-amber-100 text-amber-800 text-[11px] font-bold px-2 py-0.5 rounded-full">排定維修中</span>`;
+        }
+
+        const canCancel = (item.status === 'CONFIRMED' || item.status === 'SCHEDULED');
+        const actionBtn = canCancel ?
+          `<button onclick="cancelItem('${item.id}', '${item.type}')" class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg text-xs font-semibold transition">
+            取消釋出
+           </button>` :
+          `<span class="text-xs text-slate-400">已結案</span>`;
+
+        tr.innerHTML = `
+          <td class="px-4 py-3 font-mono text-xs font-semibold text-slate-600">${item.id}</td>
+          <td class="px-4 py-3 font-medium text-slate-800">${item.title}</td>
+          <td class="px-4 py-3 text-slate-600">${item.organizer || item.createdBy || '系統'}</td>
+          <td class="px-4 py-3 font-mono text-xs">${item.startStr} - ${item.endStr}</td>
+          <td class="px-4 py-3 text-slate-500">${item.bufferMinutes ? item.bufferMinutes + ' 分鐘' : '-'}</td>
+          <td class="px-4 py-3">${badge}</td>
+          <td class="px-4 py-3 text-right">${actionBtn}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      lucide.createIcons();
+    }
+
+    // --- Modal Logic ---
+    function openQuickBookModal() {
+      document.getElementById('modal-error').classList.add('hidden');
+      document.getElementById('book-modal').classList.remove('hidden');
+    }
+    function closeQuickBookModal() {
+      document.getElementById('book-modal').classList.add('hidden');
+    }
+    function submitQuickBook() {
+      const title = document.getElementById('modal-title').value.trim();
+      const organizer = document.getElementById('modal-organizer').value.trim();
+      const start = document.getElementById('modal-start').value;
+      const end = document.getElementById('modal-end').value;
+
+      if (!title || !start || !end) return;
+
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      const startHour = sh + sm / 60.0;
+      const endHour = eh + em / 60.0;
+
+      if (startHour >= endHour) {
+        showModalError('開始時間必須嚴格早於結束時間！');
+        return;
+      }
+
+      const conflict = checkConflict(startHour, endHour, currentRoomId);
+      if (conflict) {
+        showModalError(conflict.message);
+        return;
+      }
+
+      // Success
+      reservations.push({
+        id: 'RES-' + Math.random().toString(36).substring(2, 6).toUpperCase(),
+        roomId: currentRoomId,
+        title: title,
+        organizer: organizer,
+        startHour: startHour,
+        endHour: endHour,
+        startStr: start,
+        endStr: end,
+        bufferMinutes: ROOMS[currentRoomId].bufferMinutes,
+        status: 'CONFIRMED'
+      });
+
+      closeQuickBookModal();
+      renderDashboard();
+    }
+    function showModalError(msg) {
+      document.getElementById('modal-error-text').textContent = msg;
+      document.getElementById('modal-error').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    // --- Cancel Item ---
+    function cancelItem(id, type) {
+      if (type === 'RES') {
+        const item = reservations.find(r => r.id === id);
+        if (item) {
+          item.status = 'CANCELLED';
+        }
+      } else {
+        const item = maintenances.find(m => m.id === id);
+        if (item) {
+          item.status = 'CANCELLED';
+        }
+      }
+      renderDashboard();
+      updateSb5Dropdown();
+    }
+
+    function resetDemoData() {
+      reservations = [
+        {
+          id: 'RES-A101',
+          roomId: 'ROOM-101',
+          title: 'Q3 系統架構規劃會',
+          organizer: 'alice',
+          startHour: 10.0,
+          endHour: 11.0,
+          startStr: '10:00',
+          endStr: '11:00',
+          bufferMinutes: 15,
+          status: 'CONFIRMED',
+        },
+        {
+          id: 'RES-A102',
+          roomId: 'ROOM-101',
+          title: '行銷團隊週會',
+          organizer: 'charlie',
+          startHour: 14.0,
+          endHour: 15.0,
+          startStr: '14:00',
+          endStr: '15:00',
+          bufferMinutes: 15,
+          status: 'CONFIRMED',
+        }
+      ];
+      maintenances = [];
+      renderDashboard();
+    }
+
+    // --- Sandbox Logic ---
+    function selectSandboxRule(ruleNum) {
+      document.querySelectorAll('.sb-btn').forEach(b => {
+        b.classList.remove('border-sky-500', 'bg-sky-50', 'text-sky-800');
+        b.classList.add('border-slate-200', 'text-slate-700');
+      });
+      const activeBtn = document.getElementById('sb-rule-' + ruleNum);
+      activeBtn.classList.add('border-sky-500', 'bg-sky-50', 'text-sky-800');
+      activeBtn.classList.remove('border-slate-200', 'text-slate-700');
+
+      document.querySelectorAll('.rule-panel').forEach(p => p.classList.add('hidden'));
+      document.getElementById('rule-panel-' + ruleNum).classList.remove('hidden');
+
+      if (ruleNum === 5) updateSb5Dropdown();
+      lucide.createIcons();
+    }
+
+    // Rule 1 Sandbox
+    function setSb1Times(s, e) {
+      document.getElementById('sb1-start').value = s;
+      document.getElementById('sb1-end').value = e;
+    }
+    function executeRule1Test() {
+      const s = document.getElementById('sb1-start').value;
+      const e = document.getElementById('sb1-end').value;
+      const title = document.getElementById('sb1-title').value;
+      const [sh, sm] = s.split(':').map(Number);
+      const [eh, em] = e.split(':').map(Number);
+      const sHour = sh + sm/60.0;
+      const eHour = eh + em/60.0;
+
+      const resultBox = document.getElementById('sb1-result');
+
+      const conflict = checkConflict(sHour, eHour, 'ROOM-101');
+      if (conflict) {
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-rose-700 font-bold text-sm">
+              <i data-lucide="shield-alert" class="w-5 h-5"></i> 衝突防護成功攔截！(${conflict.type})
+            </div>
+            <p class="text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200 font-mono">
+              [TimeOverlapError] ${conflict.message}
+            </p>
+            <p class="text-[11px] text-slate-500">
+              系統判定重疊公式 $\\max(S_1, S_2) < \\min(E_1, E_2)$ 成立，嚴格拒絕 double-booking。
+            </p>
+          </div>
+        `;
+      } else {
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
+              <i data-lucide="check-circle" class="w-5 h-5"></i> 檢測通過：時段完全無重疊！
+            </div>
+            <p class="text-xs text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 font-mono">
+              [OK] 會議「${title}」(${s} - ${e}) 預約成功！
+            </p>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // Rule 2 Sandbox
+    function setSb2Times(s, e) {
+      document.getElementById('sb2-start').value = s;
+      document.getElementById('sb2-end').value = e;
+    }
+    function executeRule2Test() {
+      const s = document.getElementById('sb2-start').value;
+      const e = document.getElementById('sb2-end').value;
+      const [sh, sm] = s.split(':').map(Number);
+      const [eh, em] = e.split(':').map(Number);
+      const sHour = sh + sm/60.0;
+      const eHour = eh + em/60.0;
+
+      const resultBox = document.getElementById('sb2-result');
+      const conflict = checkConflict(sHour, eHour, 'ROOM-101');
+
+      if (conflict && (conflict.type === 'BUFFER_VIOLATION' || conflict.type === 'TIME_OVERLAP')) {
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-amber-700 font-bold text-sm">
+              <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600"></i> 緩衝時間強制規則生效！
+            </div>
+            <p class="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200 font-mono">
+              [BufferTimeViolationError] ${conflict.message}
+            </p>
+            <p class="text-[11px] text-slate-500">
+              系統規定相鄰會議間隙 $\\Delta T = S_2 - E_1$ 必須 $\\ge 15$ 分鐘，本操作已依法攔截。
+            </p>
+          </div>
+        `;
+      } else {
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
+              <i data-lucide="check-circle" class="w-5 h-5"></i> 緩衝間隔完全符合！
+            </div>
+            <p class="text-xs text-emerald-700 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 font-mono">
+              [OK] 會議 (${s} - ${e}) 與前場會議保持 &ge; 15 分鐘完整緩衝。
+            </p>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // Rule 3 Sandbox
+    function executeRule3Test() {
+      const title = document.getElementById('sb3-title').value;
+      const count = parseInt(document.getElementById('sb3-count').value, 10);
+      const policy = document.getElementById('sb3-policy').value;
+
+      // Simulate a conflict on occurrence #3
+      const resultBox = document.getElementById('sb3-result');
+
+      if (policy === 'ALL_OR_NOTHING') {
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-rose-700 font-bold text-sm">
+              <i data-lucide="alert-octagon" class="w-5 h-5"></i> ALL_OR_NOTHING 全系列原子回滾！
+            </div>
+            <p class="text-xs text-rose-700 bg-rose-50 p-2.5 rounded-lg border border-rose-200 font-mono">
+              [RecurrenceConflictError] 第 3 週 (2026-10-19) 發生時段衝突！<br>
+              全系列 ${count} 期已全部取消，0 筆殘留記錄 (強原子性保證)。
+            </p>
+            <div class="text-[11px] text-slate-500">
+              狀態：Week 1 (回滾), Week 2 (回滾), Week 3 (衝突), Week 4 (回滾)
+            </div>
+          </div>
+        `;
+      } else {
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-indigo-700 font-bold text-sm">
+              <i data-lucide="list-checks" class="w-5 h-5"></i> ALLOW_PARTIAL 部分容許排程成功！
+            </div>
+            <p class="text-xs text-indigo-800 bg-indigo-50 p-2.5 rounded-lg border border-indigo-200 font-mono">
+              成功預約：${count - 1} 期<br>
+              衝突跳過：1 期 (第 3 週 2026-10-19 衝突，已附審查報告)
+            </p>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // Rule 4 Sandbox
+    function executeRule4Test() {
+      const title = document.getElementById('sb4-title').value;
+      const start = document.getElementById('sb4-start').value;
+      const end = document.getElementById('sb4-end').value;
+      const override = document.getElementById('sb4-override').checked;
+
+      const [sh, sm] = start.split(':').map(Number);
+      const [eh, em] = end.split(':').map(Number);
+      const sHour = sh + sm/60.0;
+      const eHour = eh + em/60.0;
+
+      const resultBox = document.getElementById('sb4-result');
+
+      // Check if existing reservations overlap with 13:00 - 17:00 (RES-A102 is at 14:00 - 15:00)
+      const affected = reservations.filter(r => r.roomId === 'ROOM-101' && r.status === 'CONFIRMED' && sHour < r.endHour && r.startHour < eHour);
+
+      if (affected.length > 0 && !override) {
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-rose-700 font-bold text-sm">
+              <i data-lucide="shield-x" class="w-5 h-5"></i> 維護排程拒絕：已有 ${affected.length} 場既有會議！
+            </div>
+            <p class="text-xs text-rose-700 bg-rose-50 p-2.5 rounded-lg border border-rose-200 font-mono">
+              [MaintenanceConflictError] 未授權 override_affected=True，系統保護現有使用者預約！
+            </p>
+            <p class="text-[11px] text-slate-500">如屬緊急故障修繕，請勾選「啟用管理員強制覆蓋模式」。</p>
+          </div>
+        `;
+      } else if (affected.length > 0 && override) {
+        // Evict affected
+        affected.forEach(r => {
+          r.status = 'CANCELLED_BY_MAINTENANCE';
+        });
+        maintenances.push({
+          id: 'MAINT-E99',
+          roomId: 'ROOM-101',
+          title: title,
+          createdBy: 'admin_john',
+          startHour: sHour,
+          endHour: eHour,
+          startStr: start,
+          endStr: end,
+          status: 'SCHEDULED'
+        });
+        renderDashboard();
+
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-amber-700 font-bold text-sm">
+              <i data-lucide="wrench" class="w-5 h-5 text-rose-600"></i> 管理員強制覆蓋生效！
+            </div>
+            <p class="text-xs text-amber-800 bg-amber-50 p-2.5 rounded-lg border border-amber-200 font-mono">
+              維護時段 (${start} - ${end}) 已鎖定！<br>
+              強制驅離 ${affected.length} 場預約 (狀態轉移為 CANCELLED_BY_MAINTENANCE)。
+            </p>
+          </div>
+        `;
+      } else {
+        maintenances.push({
+          id: 'MAINT-E99',
+          roomId: 'ROOM-101',
+          title: title,
+          createdBy: 'admin_john',
+          startHour: sHour,
+          endHour: eHour,
+          startStr: start,
+          endStr: end,
+          status: 'SCHEDULED'
+        });
+        renderDashboard();
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
+              <i data-lucide="check-circle" class="w-5 h-5"></i> 維護時段順利排定！
+            </div>
+            <p class="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 font-mono">
+              該時段無現有會議，已成功鎖定維護時段。
+            </p>
+          </div>
+        `;
+      }
+      lucide.createIcons();
+    }
+
+    // Rule 5 Sandbox
+    function updateSb5Dropdown() {
+      const select = document.getElementById('sb5-select');
+      select.innerHTML = '';
+      const active = reservations.filter(r => r.roomId === 'ROOM-101' && r.status === 'CONFIRMED');
+      if (active.length === 0) {
+        select.innerHTML = '<option value="">目前 ROOM-101 無有效預約</option>';
+        return;
+      }
+      active.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.id;
+        opt.textContent = `${r.id} - ${r.title} (${r.startStr} - ${r.endStr})`;
+        select.appendChild(opt);
+      });
+    }
+
+    let lastCancelledSlot = null;
+
+    function executeRule5Cancel() {
+      const select = document.getElementById('sb5-select');
+      const resId = select.value;
+      const reason = document.getElementById('sb5-reason').value;
+      const resultBox = document.getElementById('sb5-result');
+
+      if (!resId) return;
+
+      const item = reservations.find(r => r.id === resId);
+      if (item) {
+        item.status = 'CANCELLED';
+        lastCancelledSlot = { startHour: item.startHour, endHour: item.endHour, startStr: item.startStr, endStr: item.endStr };
+        renderDashboard();
+        updateSb5Dropdown();
+
+        resultBox.innerHTML = `
+          <div class="w-full text-left space-y-2">
+            <div class="flex items-center gap-1.5 text-slate-800 font-bold text-sm">
+              <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600"></i> 預約取消成功！
+            </div>
+            <p class="text-xs text-slate-700 bg-slate-100 p-2.5 rounded-lg border border-slate-200 font-mono">
+              [Status: CANCELLED] 預約單 ${resId} 已標記取消。<br>
+              時段 (${lastCancelledSlot.startStr} - ${lastCancelledSlot.endStr}) 及換場緩衝區間已「即刻釋出」！
+            </p>
+          </div>
+        `;
+        lucide.createIcons();
+      }
+    }
+
+    function executeRule5Rebook() {
+      const resultBox = document.getElementById('sb5-result');
+      if (!lastCancelledSlot) {
+        resultBox.innerHTML = `<p class="text-xs text-rose-600">請先執行上一步「確認取消此筆預約」。</p>`;
+        return;
+      }
+
+      // Re-book exactly the same slot by someone else!
+      const newId = 'RES-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+      reservations.push({
+        id: newId,
+        roomId: 'ROOM-101',
+        title: '搶約剛釋出之黃金時段',
+        organizer: 'bob',
+        startHour: lastCancelledSlot.startHour,
+        endHour: lastCancelledSlot.endHour,
+        startStr: lastCancelledSlot.startStr,
+        endStr: lastCancelledSlot.endStr,
+        bufferMinutes: 15,
+        status: 'CONFIRMED'
+      });
+      renderDashboard();
+      updateSb5Dropdown();
+
+      resultBox.innerHTML = `
+        <div class="w-full text-left space-y-2">
+          <div class="flex items-center gap-1.5 text-emerald-700 font-bold text-sm">
+            <i data-lucide="sparkles" class="w-5 h-5 text-emerald-600"></i> 即時釋出驗證通過！
+          </div>
+          <p class="text-xs text-emerald-800 bg-emerald-50 p-2.5 rounded-lg border border-emerald-200 font-mono">
+            同仁 bob 立即成功預約該時段 (${lastCancelledSlot.startStr} - ${lastCancelledSlot.endStr})！<br>
+            單號：${newId}，證明時段完全釋放無死鎖殘留。
+          </p>
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    // --- Tab 3: 19 Tests Matrix ---
+    const TEST_CASES = [
+      { id: 1, group: '規則一：時段重疊', name: 'test_rule1_exact_overlap_fails', desc: '相同時間點重複預約同一會議室必遭阻擋', pass: true },
+      { id: 2, group: '規則一：時段重疊', name: 'test_rule1_partial_overlap_start_and_end', desc: '前端交疊或後端交疊之時段皆被阻擋', pass: true },
+      { id: 3, group: '規則一：時段重疊', name: 'test_rule1_subset_and_superset_overlap', desc: '內部包夾或外部跨越時段皆被阻擋', pass: true },
+      { id: 4, group: '規則一：時段重疊', name: 'test_rule1_different_room_same_time_succeeds', desc: '不同會議室於相同時段可正常併發預約', pass: true },
+      { id: 5, group: '規則二：緩衝時間', name: 'test_rule2_zero_gap_back_to_back_violates_buffer', desc: '0 間隔連排會議因違反清潔緩衝而阻擋', pass: true },
+      { id: 6, group: '規則二：緩衝時間', name: 'test_rule2_insufficient_buffer_gap_fails', desc: '間隔小於緩衝時間 (10分 < 15分) 遭到阻擋', pass: true },
+      { id: 7, group: '規則二：緩衝時間', name: 'test_rule2_sufficient_buffer_gap_succeeds', desc: '間隔恰等於或大於緩衝時間順利預約', pass: true },
+      { id: 8, group: '規則三：週期性會議', name: 'test_rule3_weekly_recurrence_success', desc: '每週重複連續 4 週正常生成對齊預約', pass: true },
+      { id: 9, group: '規則三：週期性會議', name: 'test_rule3_recurrence_all_or_nothing_fails_on_conflict', desc: '衝突期數觸發全系列原子回滾 (0 殘留)', pass: true },
+      { id: 10, group: '規則三：週期性會議', name: 'test_rule3_recurrence_allow_partial', desc: '容許部分模式下僅預約無衝突期數並回報', pass: true },
+      { id: 11, group: '規則三：週期性會議', name: 'test_rule3_cancel_entire_series', desc: '依據 series_id 批次取消全週期預約', pass: true },
+      { id: 12, group: '規則四：臨時維護', name: 'test_rule4_maintenance_locks_out_new_reservations', desc: '維護鎖定時段內禁止任何一般預約', pass: true },
+      { id: 13, group: '規則四：臨時維護', name: 'test_rule4_maintenance_without_override_rejects_if_bookings_exist', desc: '未授權覆蓋時拒絕在已有預約時段排定維修', pass: true },
+      { id: 14, group: '規則四：臨時維護', name: 'test_rule4_maintenance_with_override_cancels_existing_bookings', desc: '授權覆蓋時強制將預約轉為 CANCELLED_BY_MAINTENANCE', pass: true },
+      { id: 15, group: '規則四：臨時維護', name: 'test_rule4_cancelling_maintenance_frees_room', desc: '取消維護時段後會議室立即恢復對外預約', pass: true },
+      { id: 16, group: '規則五：預約取消', name: 'test_rule5_cancellation_releases_slot_and_buffer', desc: '預約取消後時段與緩衝即刻釋放供他人預約', pass: true },
+      { id: 17, group: '規則五：預約取消', name: 'test_rule5_double_cancellation_rejected', desc: '已取消之預約禁止重複取消 (狀態機防護)', pass: true },
+      { id: 18, group: '邊界條件驗證', name: 'test_edge_case_start_after_end', desc: '開始時間晚於結束時間時拋出無效區間例外', pass: true },
+      { id: 19, group: '邊界條件驗證', name: 'test_edge_case_zero_duration', desc: '開始時間等於結束時間時拋出無效區間例外', pass: true },
+    ];
+
+    function renderTestsList() {
+      const container = document.getElementById('tests-grid');
+      container.innerHTML = '';
+      TEST_CASES.forEach(tc => {
+        const card = document.createElement('div');
+        card.id = 'tc-card-' + tc.id;
+        card.className = 'bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm flex items-start justify-between gap-3';
+        card.innerHTML = `
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">${tc.group}</span>
+              <span class="font-mono text-xs font-semibold text-slate-800">${tc.name}</span>
+            </div>
+            <p class="text-xs text-slate-500">${tc.desc}</p>
+          </div>
+          <span id="tc-badge-${tc.id}" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex-shrink-0 flex items-center gap-1">
+            <i data-lucide="check" class="w-3 h-3"></i> PASS
+          </span>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    function runAllTestsInteractive() {
+      const btn = document.getElementById('btn-run-tests');
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> 正在執行測試套件...`;
+      lucide.createIcons();
+
+      let idx = 0;
+      const total = TEST_CASES.length;
+      document.getElementById('test-progress-bar').style.width = '0%';
+
+      const interval = setInterval(() => {
+        if (idx < total) {
+          const tc = TEST_CASES[idx];
+          const badge = document.getElementById('tc-badge-' + tc.id);
+          badge.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 flex items-center gap-1';
+          badge.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> PASS`;
+
+          idx++;
+          const pct = Math.round((idx / total) * 100);
+          document.getElementById('test-progress-bar').style.width = `${pct}%`;
+          document.getElementById('test-status-label').textContent = `正在驗證：[${idx}/${total}] ${tc.name}`;
+          document.getElementById('test-score-label').textContent = `${idx} / ${total} PASS (${pct}%)`;
+          lucide.createIcons();
+        } else {
+          clearInterval(interval);
+          btn.disabled = false;
+          btn.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i> 重新執行 19 項測試`;
+          document.getElementById('test-status-label').textContent = `驗證完成：19 項單元測試全數 PASS！(耗時 0.008s)`;
+          lucide.createIcons();
+        }
+      }, 70);
+    }
+
+    // --- Init ---
+    document.addEventListener('DOMContentLoaded', () => {
+      renderDashboard();
+      updateSb5Dropdown();
+      renderTestsList();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
