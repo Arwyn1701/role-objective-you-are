@@ -4,5 +4,18 @@
   "createdAt": "2026-10-01T01:46:03.748Z",
   "filename": "ace42ad0-14d4-4215-b9d1-543296254111.json",
   "geminiStarted": false,
-  "messages": []
+  "messages": [
+    {
+      "id": "b7cee43e-3847-4c3b-980a-bfd2ebad0918",
+      "role": "user",
+      "content": "# Role & Objective\nYou are an expert software architect and system designer. I am working on a homework assignment for a Meeting Room Reservation System (會議室預約系統). I need you to help me design the specification artifact and write the fully working code with verification tests.\n\n# Core Business Rules to Handle\nPlease ensure the system logic thoroughly handles the following five conditions:\n1. **時段重疊 (Time Overlap):** Prevent any double-booking of the exact same room during intersecting time intervals.\n2. **緩衝時間 (Buffer Time):** Automatically enforce a mandatory transition/cleaning gap between back-to-back reservations.\n3. **週期性會議 (Recurring Meetings):** Support rules for repeating bookings (e.g., weekly) and validate conflicts across all instances in the series.\n4. **臨時維護需求 (Temporary Maintenance):** Allow administrators to lock out rooms or override/reschedule bookings during maintenance windows.\n5. **預約取消 (Reservation Cancellation):** Handle proper state transitions when a booking is canceled, releasing the slot back to available status.\n\n# Required Deliverables\n1. **Specification Artifact (.md file):** Create a detailed Markdown document titled `HW2_會議室預約_規格描述檔.md` outlining the system architecture, data models, state transitions, and edge cases.\n2. **Working Program & Verification:** Write clean, modular code implementing these rules, along with verification/test scripts that prove all 5 scenarios pass successfully.",
+      "status": "pending",
+      "model": "gemini-3.8-flash-high",
+      "client_type": "gemini-bridge",
+      "parent_message_id": null,
+      "created_at": "2026-10-01T01:48:49.710Z",
+      "sender": "ios",
+      "is_cancelled": false
+    }
+  ]
 }
